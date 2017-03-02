@@ -11,10 +11,10 @@ import android.util.AttributeSet;
 import android.view.MotionEvent;
 import android.view.View;
 
-import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Queue;
 import java.util.Random;
 
 /**
@@ -23,13 +23,13 @@ import java.util.Random;
 
 public class MineView extends View {
     Context mContext;
-    int mapRow = 5;
+    int mapRow = 10;
     int mapCow = 10;
     int tileWidth = 100;
     int adjoin[][] = {{0, 1}, {0, -1}, {1, 0}, {-1, 0}, {-1, -1}, {-1, 1}, {1, 1}, {1, -1}
     };
     Mine[][] mines = new Mine[mapRow][mapCow];
-    List<Point> points = new LinkedList<>();
+    List<Point> points = new ArrayList<>();
     Signal signal;
 
     int minesNum = mapCow * mapRow / 5;
@@ -41,6 +41,8 @@ public class MineView extends View {
 
     private Boolean isStarted = false;
     private Boolean isFinished = false;
+
+    private Boolean flagSwitch = false;
 
     public MineView(Context context, AttributeSet attrs) {
         super(context, attrs);
@@ -54,6 +56,10 @@ public class MineView extends View {
 
     public void setSignal(Signal signal) {
         this.signal = signal;
+    }
+
+    public void setFlagSwitch(Boolean flagSwitch) {
+        this.flagSwitch = flagSwitch;
     }
 
     public void refresh() {
@@ -85,7 +91,7 @@ public class MineView extends View {
             }
         }
         for (int i = 0; i < minesNum; i++) {
-            Random random =new Random();
+            Random random = new Random();
             Point point = points.get(random.nextInt(points.size()));
             mines[point.getX()][point.getY()].setValue(-1);
             points.remove(point);
@@ -122,46 +128,37 @@ public class MineView extends View {
 
 
             case MotionEvent.ACTION_DOWN:
+
                 if (signal != null && !isStarted) {
                     isStarted = true;
                     signal.onStart();
                 }
                 int NumX;
                 int NumY;
-                float x ;
-                float y ;
+                float x;
+                float y;
                 x = event.getX();
                 y = event.getY();
                 NumX = (int) (x / tileWidth);//列号
                 NumY = (int) (y / tileWidth);//行号
                 if (checkPoint(NumX, NumY)) {
-                    if (mines[NumY][NumX].value != -1) {
-                        mines[NumY][NumX].setOpen(true);
-
-                        Boolean flag = false;
-                        for (int k = 0; k < adjoin.length; k++) {
-                            if (checkPoint(NumX +adjoin[k][0], NumY + adjoin[k][1])) {//越界访问
-                                if (mines[NumY + adjoin[k][1]][ NumX + adjoin[k][0]].value == -1){
-                                    flag = true;
-                                }
+                    if (!flagSwitch) {
+                        if (mines[NumY][NumX].value != -1) {
+                            mines[NumY][NumX].setOpen(true);
+                            open(new Point(NumY, NumX), false);
+                        } else {//碰到雷 gg 了
+                            isFinished = true;
+                            isStarted = false;
+                            if (signal != null) {
+                                signal.onFinish();
                             }
+                            showFailure();
                         }
 
-                        if (!flag) {
-                            for (int k = 0; k < adjoin.length; k++) {
-                                if (checkPoint(NumX +adjoin[k][0], NumY + adjoin[k][1])) {//越界访问
-                                    mines[NumY + adjoin[k][1]][NumX + adjoin[k][0]].setOpen(true);
-
-                                }
-                            }
+                    }else {
+                        if (!mines[NumY][NumX].isOpen()) {
+                            mines[NumY][NumX].setFlag(true);
                         }
-                    } else {
-                        isFinished = true;
-                        isStarted = false;
-                        if (signal != null) {
-                            signal.onFinish();
-                        }
-                        showFailure();
                     }
                     invalidate();
 
@@ -209,7 +206,7 @@ public class MineView extends View {
             }
 
         }
-        if(sum + minesNum == mapRow * mapCow){
+        if (sum + minesNum == mapRow * mapCow) {
             isFinished = true;
             isStarted = false;
             if (signal != null) {
@@ -227,6 +224,7 @@ public class MineView extends View {
 
 
     }
+
     private void showFailure() {
         new AlertDialog.Builder(mContext)
                 .setMessage("恭喜你，爆炸了")
@@ -239,6 +237,7 @@ public class MineView extends View {
                 .create()
                 .show();
     }
+
     private void showSuccess() {
         new AlertDialog.Builder(mContext)
                 .setMessage("恭喜你，你找出了所有雷")
@@ -253,10 +252,9 @@ public class MineView extends View {
     }
 
     /***
-     *
      * @param canvas
-     * @param i 行号
-     * @param j 列号
+     * @param i      行号
+     * @param j      列号
      */
     private void drawShow(Canvas canvas, int i, int j) {
         if (mines[i][j].value == -1) {//画雷
@@ -274,13 +272,45 @@ public class MineView extends View {
                 }
             }
             mines[i][j].value = sum;
-            canvas.drawText(sum + "", (float) ((j + 0.5) * tileWidth), (float) ((i + 0.75) * tileWidth), mathPaint);
+            if (sum == 0) {
+                canvas.drawText("", (float) ((j + 0.5) * tileWidth), (float) ((i + 0.75) * tileWidth), mathPaint);
+            } else {
+                canvas.drawText(sum + "", (float) ((j + 0.5) * tileWidth), (float) ((i + 0.75) * tileWidth), mathPaint);
+            }
+
         }
+    }
+
+    /***
+     * @param point   位置
+     * @param isFirst 是否未第一次点开，防止用户第一次就踩了雷
+     */
+    public void open(Point point, boolean isFirst) {
+        if (isFirst) {
+
+        }
+        mines[point.getX()][point.getY()].setOpen(true);
+        Queue<Point> points = new LinkedList<>();
+        points.add(point);
+        while (points.size() != 0) {
+            Point po = points.poll();
+            for (int i = 0; i < adjoin.length; i++) {
+                int x = po.getX() + adjoin[i][0];
+                int y = po.getY() + adjoin[i][1];
+                if (checkPoint(x, y) && mines[x][y].value == 0 && !mines[x][y].isOpen()) {
+                    mines[x][y].setOpen(true);
+                    points.add(new Point(x, y));
+                }
+            }
+        }
+
     }
 
     interface Signal {
         void onStart();
 
         void onFinish();
+
+        void onFlag(int num);
     }
 }

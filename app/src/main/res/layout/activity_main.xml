@@ -17,22 +17,45 @@
         android:id="@+id/mine_view"
         android:layout_width="wrap_content"
         android:layout_height="400dp" />
-    <TextView
-        android:layout_width="wrap_content"
+    <LinearLayout
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:id="@+id/refresh_view"
-        android:layout_alignParentLeft="true"
         android:layout_alignParentBottom="true"
-        android:textSize="40sp"
-        android:background="@android:color/white"
-        android:text="重来"/>
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:id="@+id/time_view"
-        android:layout_alignParentRight="true"
-        android:layout_alignParentBottom="true"
-        android:textSize="40sp"
-        android:background="@android:color/white"
-        android:text="0"/>
+        android:orientation="horizontal">
+        <TextView
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            android:layout_height="wrap_content"
+            android:id="@+id/refresh_view"
+            android:textSize="40sp"
+            android:background="@android:color/white"
+            android:text="重来"/>
+        <TextView
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:id="@+id/time_view"
+            android:textSize="40sp"
+            android:background="@android:color/white"
+            android:text="0"/>
+        <TextView
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:id="@+id/num_view"
+             android:textSize="40sp"
+            android:background="@android:color/white"
+            android:text="0"/>
+        <TextView
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            android:layout_height="wrap_content"
+            android:id="@+id/flag_view"
+            android:textSize="40sp"
+            android:background="@android:color/white"
+            android:text="插旗"/>
+    </LinearLayout>
+
 </RelativeLayout>
