@@ -12,6 +12,10 @@ import android.view.MotionEvent;
 import android.view.View;
 
 import java.lang.ref.WeakReference;
+import java.util.ArrayList;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Random;
 
 /**
  * Created by fanghao01 on 17/3/1.
@@ -25,9 +29,10 @@ public class MineView extends View {
     int adjoin[][] = {{0, 1}, {0, -1}, {1, 0}, {-1, 0}, {-1, -1}, {-1, 1}, {1, 1}, {1, -1}
     };
     Mine[][] mines = new Mine[mapRow][mapCow];
+    List<Point> points = new LinkedList<>();
     Signal signal;
 
-    int minesNum = 1;
+    int minesNum = mapCow * mapRow / 5;
 
     private Paint bmpPaint;
     private Paint minePaint;
@@ -74,10 +79,17 @@ public class MineView extends View {
             for (int j = 0; j < mapCow; j++) {
                 Mine mine = new Mine(0, false, false);
                 mines[i][j] = mine;
+
+                Point point = new Point(i, j);
+                points.add(point);
             }
         }
-        Mine mine = new Mine(-1, false, false);
-        mines[1][2] = mine;
+        for (int i = 0; i < minesNum; i++) {
+            Random random =new Random();
+            Point point = points.get(random.nextInt(points.size()));
+            mines[point.getX()][point.getY()].setValue(-1);
+            points.remove(point);
+        }
 
         bmpPaint = new Paint();
         bmpPaint.setAntiAlias(true);
