@@ -25,6 +25,7 @@ import java.util.Random;
 
 public class MineView extends View {
     private Context mContext;
+    
     private int mapRow = 10;
     private int mapCow = 10;
     private int tileWidth = 100;
