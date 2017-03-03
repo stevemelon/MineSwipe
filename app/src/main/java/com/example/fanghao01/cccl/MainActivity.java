@@ -48,7 +48,7 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 handler.sendEmptyMessage(END);
-                mineView.refresh();
+                mineView.refresh(null);
                 time = 0;
             }
         });
@@ -82,7 +82,7 @@ public class MainActivity extends AppCompatActivity {
 
             @Override
             public void onFlag(int num) {
-
+                num_view.setText(num + "");
             }
         });
     }

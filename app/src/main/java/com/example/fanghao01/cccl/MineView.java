@@ -24,7 +24,7 @@ import java.util.Random;
  */
 
 public class MineView extends View {
-    
+
     private Context mContext;
 
     private int mapRow = 10;
@@ -39,7 +39,7 @@ public class MineView extends View {
 
     private Signal signal;
 
-    private int minesNum = mapCow * mapRow / 5;
+    private int minesNum = mapCow * mapRow -1;
 
     private Paint bmpPaint;
     private Paint minePaint;
@@ -90,7 +90,10 @@ public class MineView extends View {
                 points.add(point);
             }
         }
-        generateTile();
+        if (signal != null) {
+            signal.onFlag(minesNum);
+        }
+        generateTile(null);
 
     }
 
@@ -106,7 +109,7 @@ public class MineView extends View {
         this.flagSwitch = flagSwitch;
     }
 
-    public void refresh() {
+    public void refresh(Point except) {
         if (!isStarted && !isFinished) {
             return;
         }
@@ -119,7 +122,7 @@ public class MineView extends View {
                 mines[i][j].value = 0;
             }
         }
-        generateTile();
+        generateTile(except);
         invalidate();
         if (signal != null) {
             signal.onFinish();
@@ -127,20 +130,27 @@ public class MineView extends View {
         }
     }
 
-    private void generateTile() {
-        generateMine();
+    private void generateTile(Point except) {
+        generateMine(except);
         generateNum();
     }
 
     //生成雷
-    private void generateMine() {
+    private void generateMine(Point except) {
         if (pointsRemain != null) {
             points.addAll(pointsRemain);
             pointsRemain.clear();
         }
+
         for (int i = 0; i < minesNum; i++) {
             Random random = new Random();
             Point point = points.get(random.nextInt(points.size()));
+
+            if (except != null && except.getX() == point.getX() && except.getY() == point.getY()) {
+                points.remove(point);
+                pointsRemain.add(point);
+                continue;
+            }
             mines[point.getX()][point.getY()].setValue(-1);
 
             pointsRemain.add(point);
@@ -175,10 +185,6 @@ public class MineView extends View {
         switch (event.getAction()) {
             case MotionEvent.ACTION_DOWN:
 
-                if (signal != null && !isStarted) {
-                    isStarted = true;
-                    signal.onStart();
-                }
                 int NumX;
                 int NumY;
                 float x;
@@ -187,22 +193,47 @@ public class MineView extends View {
                 y = event.getY();
                 NumX = (int) (y / tileWidth);//行号
                 NumY = (int) (x / tileWidth);//列号
+
+                if (!isStarted && mines[NumX][NumY].value == -1) {
+                    Point point = new Point(NumX, NumY);
+
+                    isStarted = true;
+                    signal.onStart();
+
+                    refresh(point);
+                }
+
+                if (signal != null && !isStarted) {
+                    isStarted = true;
+                    signal.onStart();
+                }
+
                 if (checkPoint(NumX, NumY)) {
 
-                    if (mines[NumX][NumY].value == 0) {//在已经出现的数字或者空白上点击
-                        boolean isAllshow = true;
+                    if (mines[NumX][NumY].value != -1 && mines[NumX][NumY].isOpen()
+                            && !mines[NumX][NumY].isFlag()) {//在已经出现的数字或者空白上点击
+                        int sum = 0;
                         for (int k = 0; k < adjoin.length; k++) {
-                            if (checkPoint(NumX + adjoin[k][0], NumY + adjoin[k][1])) {
-                                int value = mines[NumX + adjoin[k][0]][NumY + adjoin[k][1]].value;
-                                if (value == -1) {
-                                    isAllshow = false;
+                            int pointX = NumX + adjoin[k][0];
+                            int pointY = NumY + adjoin[k][1];
+                            if (checkPoint(pointX, pointY)) {
+                                if (mines[pointX][pointY].isFlag()) {
+                                    sum++;
                                 }
                             }
                         }
-                        if (isAllshow) {
+                        if (sum == mines[NumX][NumY].value) {
                             for (int k = 0; k < adjoin.length; k++) {
-                                if (checkPoint(NumX + adjoin[k][0], NumY + adjoin[k][1])) {
-                                    mines[NumX + adjoin[k][0]][NumY + adjoin[k][1]].setOpen(true);
+                                int pointX = NumX + adjoin[k][0];
+                                int pointY = NumY + adjoin[k][1];
+                                if (checkPoint(pointX, pointY)) {
+                                    if (mines[pointX][pointY].value == -1 && !mines[pointX][pointY].flag) {
+                                        preFinish();
+                                        showFailure();
+                                        break;
+                                    }
+                                    open(new Point(pointX, pointY), false);
+                                    mines[pointX][pointY].setOpen(true);
                                 }
                             }
                             invalidate();
@@ -212,16 +243,12 @@ public class MineView extends View {
                         if (mines[NumX][NumY].value != -1) {
                             open(new Point(NumX, NumY), false);
                         } else {//碰到雷 gg 了
-                            isFinished = true;
-                            isStarted = false;
-                            if (signal != null) {
-                                signal.onFinish();
-                            }
+                            preFinish();
                             showFailure();
                         }
                     } else {//插旗模式
                         if (!mines[NumX][NumY].isOpen()) {
-                            mines[NumX][NumY].setFlag(true);
+                            mines[NumX][NumY].setFlag(!mines[NumX][NumY].isFlag());
                         }
                     }
                     invalidate();
@@ -233,6 +260,14 @@ public class MineView extends View {
         return true;
     }
 
+    private void preFinish() {
+        isFinished = true;
+        isStarted = false;
+        if (signal != null) {
+            signal.onFinish();
+        }
+    }
+
     private boolean checkPoint(int numX, int numY) {
         return numX < mapRow && numX >= 0 && numY < mapCow && numY >= 0;
     }
@@ -242,6 +277,7 @@ public class MineView extends View {
         int width = mapCow * tileWidth;
         int height = mapRow * tileWidth;
         int sum = 0;
+        int flagSum = 0;//标记的类数量
         //画地图
         for (int i = 0; i < mapRow; i++) {
             for (int j = 0; j < mapCow; j++) {
@@ -252,25 +288,21 @@ public class MineView extends View {
                     }
                     drawShow(canvas, i, j);
                 } else {
-                    if (!mines[i][j].isOpen()) {//如果没有打开
-                        if (mines[i][j].isFlag()) {
-                            drawFlag(canvas, i, j);
-                        } else {
-                            drawBlank(canvas, i, j, blankPaint);
-                        }
-                    } else {
+                    drawShow(canvas, i, j);
+                    if (mines[i][j].isOpen()) {//如果没有打开
                         sum++;
-                        drawShow(canvas, i, j);
                     }
+                }
+                if (mines[i][j].isFlag()) {
+                    flagSum++;
                 }
             }
         }
+        if (signal != null) {
+            signal.onFlag(minesNum - flagSum);
+        }
         if (sum + minesNum == mapRow * mapCow) {
-            isFinished = true;
-            isStarted = false;
-            if (signal != null) {
-                signal.onFinish();
-            }
+            preFinish();
             showSuccess();
         }
         //划线
@@ -302,19 +334,27 @@ public class MineView extends View {
      * @param j      列号
      */
     private void drawShow(Canvas canvas, int i, int j) {
-        if (mines[i][j].value == -1) {//画雷
-            canvas.drawRect(j * tileWidth, i * tileWidth,
-                    (j + 1) * tileWidth,
-                    (i + 1) * tileWidth, minePaint);
-        } else {//画数字
-            int value = mines[i][j].value;
-            if (value == 0) {
-                canvas.drawText("", (float) ((j + 0.5) * tileWidth), (float) ((i + 0.75) * tileWidth), mathPaint);
-            } else {
-                canvas.drawText(value + "", (float) ((j + 0.5) * tileWidth), (float) ((i + 0.75) * tileWidth), mathPaint);
+        if (mines[i][j].isOpen() && !mines[i][j].isFlag()) {
+            if (mines[i][j].value == -1) {//画雷
+                canvas.drawRect(j * tileWidth, i * tileWidth,
+                        (j + 1) * tileWidth,
+                        (i + 1) * tileWidth, minePaint);
+            } else {//画数字
+                int value = mines[i][j].value;
+                if (value == 0) {
+                    canvas.drawText("", (float) ((j + 0.5) * tileWidth), (float) ((i + 0.75) * tileWidth), mathPaint);
+                } else {
+                    canvas.drawText(value + "", (float) ((j + 0.5) * tileWidth), (float) ((i + 0.75) * tileWidth), mathPaint);
+                }
+
             }
 
+        } else if (mines[i][j].isFlag()) {
+            drawFlag(canvas, i, j);
+        } else {
+            drawBlank(canvas, i, j, blankPaint);
         }
+
     }
 
     /***
@@ -366,6 +406,7 @@ public class MineView extends View {
                 .create()
                 .show();
     }
+
     interface Signal {
 
         void onStart();
