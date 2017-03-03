@@ -39,7 +39,7 @@ public class MineView extends View {
 
     private Signal signal;
 
-    private int minesNum = mapCow * mapRow -1;
+    private int minesNum = mapCow * mapRow /6;
 
     private Paint bmpPaint;
     private Paint minePaint;
@@ -184,7 +184,9 @@ public class MineView extends View {
     public boolean onTouchEvent(MotionEvent event) {
         switch (event.getAction()) {
             case MotionEvent.ACTION_DOWN:
-
+                if (isFinished) {
+                    break;
+                }
                 int NumX;
                 int NumY;
                 float x;
@@ -289,7 +291,7 @@ public class MineView extends View {
                     drawShow(canvas, i, j);
                 } else {
                     drawShow(canvas, i, j);
-                    if (mines[i][j].isOpen()) {//如果没有打开
+                    if (mines[i][j].isOpen() && mines[i][j].value != -1) {//如果没有打开
                         sum++;
                     }
                 }
@@ -373,9 +375,11 @@ public class MineView extends View {
             for (int i = 0; i < adjoin.length; i++) {
                 int x = po.getX() + adjoin[i][0];
                 int y = po.getY() + adjoin[i][1];
-                if (checkPoint(x, y) && mines[x][y].value == 0 && !mines[x][y].isOpen()) {
+                if (checkPoint(x, y) && mines[x][y].value != -1 && !mines[x][y].isOpen()) {
                     mines[x][y].setOpen(true);
-                    pointQueue.add(new Point(x, y));
+                    if (mines[x][y].value == 0) {
+                        pointQueue.add(new Point(x, y));
+                    }
                 }
             }
         }
