@@ -4,16 +4,72 @@
     android:id="@+id/activity_main"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-
     tools:context="com.example.fanghao01.cccl.MainActivity">
-    <!--<ImageView
+    <LinearLayout
+        android:id="@+id/title_linear"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:scaleType="fitXY"
-        android:src="@drawable/sb"/>-->
+        android:layout_height="wrap_content"
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
 
+        <TextView
+            android:id="@+id/textView"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="时间：" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:id="@+id/time_view"
+            android:textSize="20sp"
+            android:background="@android:color/white"
+            android:text="0"/>
+        <RelativeLayout
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center">
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical">
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="进度："/>
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:gravity="center"
+                    android:id="@+id/progress_view"
+                    android:textSize="20sp"
+                    android:background="@android:color/white"
+                    android:text="0"/>
+            </LinearLayout>
+
+        </RelativeLayout>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="剩余雷数："/>
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:id="@+id/num_view"
+            android:textSize="20sp"
+            android:background="@android:color/white"
+            android:text="0"/>
+    </LinearLayout>
 
     <com.example.fanghao01.cccl.MineView
+        android:layout_below="@+id/title_linear"
         android:id="@+id/mine_view"
         android:layout_width="wrap_content"
         android:layout_height="400dp" />
@@ -29,25 +85,9 @@
             android:id="@+id/refresh_view"
             android:textSize="40sp"
             android:background="@android:color/white"
+            android:gravity="center"
             android:text="重来"/>
-        <TextView
-            android:layout_width="0dp"
-            android:layout_weight="1"
-            android:layout_height="wrap_content"
-            android:gravity="center"
-            android:id="@+id/time_view"
-            android:textSize="40sp"
-            android:background="@android:color/white"
-            android:text="0"/>
-        <TextView
-            android:layout_width="0dp"
-            android:layout_weight="1"
-            android:layout_height="wrap_content"
-            android:gravity="center"
-            android:id="@+id/num_view"
-             android:textSize="40sp"
-            android:background="@android:color/white"
-            android:text="0"/>
+
         <TextView
             android:layout_width="0dp"
             android:layout_weight="1"
@@ -55,6 +95,7 @@
             android:id="@+id/flag_view"
             android:textSize="40sp"
             android:background="@android:color/white"
+            android:gravity="center"
             android:text="插旗"/>
     </LinearLayout>
 
