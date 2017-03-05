@@ -39,8 +39,9 @@ public class MineView extends View {
     int mapWidth = mapCow * tileWidth;//地图实际宽度
     int mapHeight = mapRow * tileWidth;//地图实际高度
 
-    private int adjoin[][] = {{0, 1}, {0, -1}, {1, 0}, {-1, 0}, {-1, -1}, {-1, 1}, {1, 1}, {1, -1}};//周围8个方块
-    private int fourAdjoin[][] = {{0, 1}, {0, -1}, {1, 0}, {-1, 0}};
+    private int[][] adjoin = {{0, 1}, {0, -1}, {1, 0}, {-1, 0}, {-1, -1}, {-1, 1}, {1, 1}, {1, -1}};//周围8个方块
+    private int[][] fourAdjoin = {{0, 1}, {0, -1}, {-1, 0}, {1, 0}};
+    private int[][] fourCorner = {{-1, 1}, {1, 1}, {-1, -1}, {1, -1}};//下左 下右 上左 上右
     private Mine[][] mines = new Mine[mapRow][mapCow];
 
     private List<Point> points = new ArrayList<>();//是雷的点
@@ -441,14 +442,29 @@ public class MineView extends View {
         pointQueue.add(point);
         while (pointQueue.size() != 0) {
             Point po = pointQueue.poll();
+            Boolean[] fourAdjoinShow = {false, false, false, false};//下上左右
             for (int i = 0; i < fourAdjoin.length; i++) {
                 int x = po.getX() + fourAdjoin[i][0];
                 int y = po.getY() + fourAdjoin[i][1];
-                if (checkPoint(x, y) && mines[x][y].value != -1 && !mines[x][y].isOpen() && !mines[x][y].isFlag()) {
-                    mines[x][y].setOpen(true);
-                    if (mines[x][y].value == 0) {
+                if (checkPoint(x, y) && mines[x][y].value != -1  && !mines[x][y].isFlag()) {
+                    if (mines[x][y].value > 0) {
+                        fourAdjoinShow[i] = true;
+                    }else if (mines[x][y].value == 0 && !mines[x][y].isOpen()) {
                         pointQueue.add(new Point(x, y));
                     }
+                    mines[x][y].setOpen(true);
+
+                }
+            }
+            //下左 下右 上左 上右
+            Boolean[] fourConerShow = {fourAdjoinShow[0] && fourAdjoinShow[2],
+                    fourAdjoinShow[0] && fourAdjoinShow[3],fourAdjoinShow[1] && fourAdjoinShow[2],
+                    fourAdjoinShow[1] && fourAdjoinShow[3]};
+            for (int i = 0; i < fourCorner.length; i++) {
+                int x = po.getX() + fourCorner[i][0];
+                int y = po.getY() + fourCorner[i][1];
+                if (fourConerShow[i] && mines[x][y].value > 0 && !mines[x][y].isOpen() && !mines[x][y].isFlag()) {
+                    mines[x][y].setOpen(true);
                 }
             }
         }
