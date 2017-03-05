@@ -26,6 +26,7 @@ import java.util.Random;
 
 public class MineView extends View {
 
+    private static final String TAG = "MineView";
     private Context mContext;
 
     private int mapRow = 30;
@@ -262,13 +263,15 @@ public class MineView extends View {
                                         break;
                                     }
                                     open(new Point(pointX, pointY), false);
-                                    mines[pointX][pointY].setOpen(true);
                                 }
                             }
                             invalidate();
                         }
                     }
                     if (!flagSwitch) {//扫雷模式
+                        if (mines[NumUpX][NumUpY].flag){
+                            break;
+                        }
                         if (mines[NumUpX][NumUpY].value != -1) {
                             open(new Point(NumUpX, NumUpY), false);
                         } else {//碰到雷 gg 了
@@ -335,6 +338,7 @@ public class MineView extends View {
 
     @Override
     protected void onDraw(Canvas canvas) {
+        Log.i(TAG + "fanghao", "onDraw: ");
         int width = mapCow * tileWidth;
         int height = mapRow * tileWidth;
         int sum = 0;
@@ -426,7 +430,9 @@ public class MineView extends View {
         if (isFirst) {
 
         }
-        mines[point.getX()][point.getY()].setOpen(true);
+        if (!mines[point.getX()][point.getY()].isFlag()) {
+            mines[point.getX()][point.getY()].setOpen(true);
+        }
         if (mines[point.getX()][point.getY()].value != 0) {
             return;
         }
@@ -437,7 +443,7 @@ public class MineView extends View {
             for (int i = 0; i < fourAdjoin.length; i++) {
                 int x = po.getX() + fourAdjoin[i][0];
                 int y = po.getY() + fourAdjoin[i][1];
-                if (checkPoint(x, y) && mines[x][y].value != -1 && !mines[x][y].isOpen()) {
+                if (checkPoint(x, y) && mines[x][y].value != -1 && !mines[x][y].isOpen() && !mines[x][y].isFlag()) {
                     mines[x][y].setOpen(true);
                     if (mines[x][y].value == 0) {
                         pointQueue.add(new Point(x, y));
