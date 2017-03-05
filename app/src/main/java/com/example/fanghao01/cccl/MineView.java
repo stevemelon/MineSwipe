@@ -32,11 +32,13 @@ public class MineView extends View {
     private int mapCow = 16;
 
     private int tileWidth = 100;
+    private float mTouchSlop = 10;//当手指拖动值大于TouchSlop值时，认为应该进行了move操作
 
     int mapWidth = mapCow * tileWidth;//地图实际宽度
     int mapHeight = mapRow * tileWidth;//地图实际高度
 
     private int adjoin[][] = {{0, 1}, {0, -1}, {1, 0}, {-1, 0}, {-1, -1}, {-1, 1}, {1, 1}, {1, -1}};//周围8个方块
+    private int fourAdjoin[][] = {{0, 1}, {0, -1}, {1, 0}, {-1, 0}};
     private Mine[][] mines = new Mine[mapRow][mapCow];
 
     private List<Point> points = new ArrayList<>();//是雷的点
@@ -55,6 +57,7 @@ public class MineView extends View {
     private Boolean isFinished = false;
 
     private Boolean flagSwitch = false;
+
 
     public MineView(Context context, AttributeSet attrs) {
         super(context, attrs);
@@ -184,19 +187,24 @@ public class MineView extends View {
             }
         }
     }
-    int mode;
+
     float startX;
     float startY;
     int NumDownX, NumDownY;
     int NumUpX, NumUpY;
+    boolean isMoved;//是否移动了
     @Override
     public boolean onTouchEvent(MotionEvent event) {
         switch (event.getAction() & MotionEvent.ACTION_MASK) {
             case MotionEvent.ACTION_DOWN:
-                mode = 1;
+                isMoved = false;
+
                 if (isFinished) {
                     break;
                 }
+                startX = event.getX();
+                startY = event.getY();
+
                 float x = event.getX() + getScrollX();
                 float y = event.getY() + getScrollY();
 
@@ -204,7 +212,9 @@ public class MineView extends View {
                 NumDownY = (int) (x / tileWidth);//列号
                 break;
             case MotionEvent.ACTION_UP:
-
+                if (isMoved) {
+                    break;
+                }
                 x = event.getX() + getScrollX();
                 y = event.getY() + getScrollY();
 
@@ -275,37 +285,37 @@ public class MineView extends View {
                 }
                 break;
 
-            case MotionEvent.ACTION_POINTER_DOWN:
-                mode = 2;
-                startX = event.getX(0);
-                startY = event.getY(0);
-                break;
             case MotionEvent.ACTION_MOVE:
-                if (mode == 2) {
-                    Log.i("fanghao ", "onTouchEventX: " + getScrollX());
-                    Log.i("fanghao ", "onTouchEventY: " + getScrollY());
-                    float futureX = getScrollX() + startX - event.getX(0);
-                    float futureY = getScrollY() + startY - event.getY(0);
-                    if (futureX < -10 ){
-                        futureX = -10;
-                    }
-                    if (mapWidth < getWidth()) {
-                        futureX = 0;
-                    }else if (futureX > mapWidth -getWidth() + 10){
-                        futureX = mapWidth -getWidth() + 10;
-                    }
-                    if (futureY < -10) {
-                        futureY = -10;
-                    }
-                    if (mapHeight < getHeight()) {
-                        futureY = 0;
-                    }else if (futureY > mapHeight -getHeight() + 10){
-                        futureY = mapHeight -getHeight() + 10;
-                    }
-                    scrollTo((int)futureX,(int)futureY);
-                    startX = event.getX(0);
-                    startY = event.getY(0);
+                Log.i("fanghao ", "onTouchEventX: " + getScrollX());
+                Log.i("fanghao ", "startX: " + event.getX());
+                Log.i("fanghao ", "onTouchEventY: " + getScrollY());
+                Log.i("fanghao ", "startY: " + event.getY());
+                if (Math.abs(event.getX() - startX) >= mTouchSlop || Math.abs(event.getY() - startY) >= mTouchSlop) {
+                    isMoved = true;
                 }
+
+                float futureX = getScrollX() + startX - event.getX();
+                float futureY = getScrollY() + startY - event.getY();
+                if (futureX < -10) {
+                    futureX = -10;
+                }
+                if (mapWidth < getWidth()) {
+                    futureX = 0;
+                } else if (futureX > mapWidth - getWidth() + 10) {
+                    futureX = mapWidth - getWidth() + 10;
+                }
+                if (futureY < -10) {
+                    futureY = -10;
+                }
+                if (mapHeight < getHeight()) {
+                    futureY = 0;
+                } else if (futureY > mapHeight - getHeight() + 10) {
+                    futureY = mapHeight - getHeight() + 10;
+                }
+                scrollTo((int) futureX, (int) futureY);
+                startX = event.getX();
+                startY = event.getY();
+
                 break;
         }
         return true;
@@ -417,13 +427,16 @@ public class MineView extends View {
 
         }
         mines[point.getX()][point.getY()].setOpen(true);
+        if (mines[point.getX()][point.getY()].value != 0) {
+            return;
+        }
         Queue<Point> pointQueue = new LinkedList<>();
         pointQueue.add(point);
         while (pointQueue.size() != 0) {
             Point po = pointQueue.poll();
-            for (int i = 0; i < adjoin.length; i++) {
-                int x = po.getX() + adjoin[i][0];
-                int y = po.getY() + adjoin[i][1];
+            for (int i = 0; i < fourAdjoin.length; i++) {
+                int x = po.getX() + fourAdjoin[i][0];
+                int y = po.getY() + fourAdjoin[i][1];
                 if (checkPoint(x, y) && mines[x][y].value != -1 && !mines[x][y].isOpen()) {
                     mines[x][y].setOpen(true);
                     if (mines[x][y].value == 0) {
