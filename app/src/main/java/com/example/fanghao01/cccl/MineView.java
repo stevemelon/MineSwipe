@@ -429,7 +429,7 @@ public class MineView extends View {
     }
 
     /***
-     * @param point   位置
+     * @param point   位置 自动展开算法
      */
     public void open(Point point) {
         if (!mines[point.getX()][point.getY()].isFlag()) {
@@ -463,8 +463,11 @@ public class MineView extends View {
             for (int i = 0; i < fourCorner.length; i++) {
                 int x = po.getX() + fourCorner[i][0];
                 int y = po.getY() + fourCorner[i][1];
-                if (fourConerShow[i] && mines[x][y].value > 0 && !mines[x][y].isOpen() && !mines[x][y].isFlag()) {
+                if (fourConerShow[i] && mines[x][y].value >= 0 && !mines[x][y].isOpen() && !mines[x][y].isFlag()) {
                     mines[x][y].setOpen(true);
+                    if (mines[x][y].value == 0) {
+                        pointQueue.add(new Point(x, y));
+                    }
                 }
             }
         }
