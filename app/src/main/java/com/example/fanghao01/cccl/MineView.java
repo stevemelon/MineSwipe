@@ -3,6 +3,7 @@ package com.example.fanghao01.cccl;
 import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
+import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.Color;
@@ -53,6 +54,7 @@ public class MineView extends View {
     private Paint minePaint;
     private Paint mathPaint;
     private Paint blankPaint;
+    private Bitmap flagBitmap;
 
     private Boolean isStarted = false;
     private Boolean isFinished = false;
@@ -67,6 +69,9 @@ public class MineView extends View {
     }
 
     private void init() {
+        //提前初始化，否则每次加载会非常卡顿！
+        flagBitmap = BitmapFactory.decodeResource(getResources(), R.drawable.flag);
+
         bmpPaint = new Paint();
         bmpPaint.setAntiAlias(true);
         bmpPaint.setColor(Color.WHITE);
@@ -262,7 +267,7 @@ public class MineView extends View {
                                         showFailure();
                                         break;
                                     }
-                                    open(new Point(pointX, pointY), false);
+                                    open(new Point(pointX, pointY));
                                 }
                             }
                             invalidate();
@@ -273,7 +278,7 @@ public class MineView extends View {
                             break;
                         }
                         if (mines[NumUpX][NumUpY].value != -1) {
-                            open(new Point(NumUpX, NumUpY), false);
+                            open(new Point(NumUpX, NumUpY));
                         } else {//碰到雷 gg 了
                             preFinish();
                             showFailure();
@@ -390,7 +395,7 @@ public class MineView extends View {
         RectF rectF = new RectF(j * tileWidth, i * tileWidth,
                 (j + 1) * tileWidth,
                 (i + 1) * tileWidth);
-        canvas.drawBitmap(BitmapFactory.decodeResource(getResources(), R.drawable.flag), null, rectF, null);
+        canvas.drawBitmap(flagBitmap, null, rectF, null);
     }
 
     /***
@@ -424,12 +429,8 @@ public class MineView extends View {
 
     /***
      * @param point   位置
-     * @param isFirst 是否未第一次点开，防止用户第一次就踩了雷
      */
-    public void open(Point point, boolean isFirst) {
-        if (isFirst) {
-
-        }
+    public void open(Point point) {
         if (!mines[point.getX()][point.getY()].isFlag()) {
             mines[point.getX()][point.getY()].setOpen(true);
         }
