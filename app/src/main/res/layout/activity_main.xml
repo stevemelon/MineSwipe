@@ -1,10 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
-<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/activity_main"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context="com.example.fanghao01.cccl.MainActivity">
+    tools:context="com.example.fanghao01.cccl.MainActivity"
+    android:orientation="vertical">
     <LinearLayout
         android:id="@+id/title_linear"
         android:layout_width="match_parent"
@@ -69,14 +70,13 @@
     </LinearLayout>
 
     <com.example.fanghao01.cccl.MineView
-        android:layout_below="@+id/title_linear"
         android:id="@+id/mine_view"
         android:layout_width="wrap_content"
-        android:layout_height="400dp" />
+        android:layout_height="0dp"
+        android:layout_weight="1"/>
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_alignParentBottom="true"
         android:orientation="horizontal">
         <TextView
             android:layout_width="0dp"
@@ -99,4 +99,4 @@
             android:text="插旗"/>
     </LinearLayout>
 
-</RelativeLayout>
+</LinearLayout>

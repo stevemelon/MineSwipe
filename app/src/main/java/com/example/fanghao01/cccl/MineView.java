@@ -10,6 +10,7 @@ import android.graphics.Paint;
 import android.graphics.RectF;
 import android.graphics.Typeface;
 import android.util.AttributeSet;
+import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
 
@@ -27,9 +28,13 @@ public class MineView extends View {
 
     private Context mContext;
 
-    private int mapRow = 10;
-    private int mapCow = 10;
+    private int mapRow = 30;
+    private int mapCow = 16;
+
     private int tileWidth = 100;
+
+    int mapWidth = mapCow * tileWidth;//地图实际宽度
+    int mapHeight = mapRow * tileWidth;//地图实际高度
 
     private int adjoin[][] = {{0, 1}, {0, -1}, {1, 0}, {-1, 0}, {-1, -1}, {-1, 1}, {1, 1}, {1, -1}};//周围8个方块
     private Mine[][] mines = new Mine[mapRow][mapCow];
@@ -39,7 +44,7 @@ public class MineView extends View {
 
     private Signal signal;
 
-    private int minesNum = mapCow * mapRow /6;
+    private int minesNum = 99/*mapCow * mapRow /6*/;
 
     private Paint bmpPaint;
     private Paint minePaint;
@@ -179,25 +184,37 @@ public class MineView extends View {
             }
         }
     }
-
+    int mode;
+    float startX;
+    float startY;
+    int NumDownX, NumDownY;
+    int NumUpX, NumUpY;
     @Override
     public boolean onTouchEvent(MotionEvent event) {
-        switch (event.getAction()) {
+        switch (event.getAction() & MotionEvent.ACTION_MASK) {
             case MotionEvent.ACTION_DOWN:
+                mode = 1;
                 if (isFinished) {
                     break;
                 }
-                int NumX;
-                int NumY;
-                float x;
-                float y;
-                x = event.getX();
-                y = event.getY();
-                NumX = (int) (y / tileWidth);//行号
-                NumY = (int) (x / tileWidth);//列号
+                float x = event.getX() + getScrollX();
+                float y = event.getY() + getScrollY();
 
-                if (!isStarted && mines[NumX][NumY].value == -1) {
-                    Point point = new Point(NumX, NumY);
+                NumDownX = (int) (y / tileWidth);//行号
+                NumDownY = (int) (x / tileWidth);//列号
+                break;
+            case MotionEvent.ACTION_UP:
+
+                x = event.getX() + getScrollX();
+                y = event.getY() + getScrollY();
+
+                NumUpX = (int) (y / tileWidth);//行号
+                NumUpY = (int) (x / tileWidth);//列号
+                if (NumDownX != NumUpX || NumDownY != NumDownY || !checkPoint(NumUpX, NumUpY)){
+                    break;
+                }
+                if (!isStarted && mines[NumUpX][NumUpY].value == -1) {
+                    Point point = new Point(NumUpX, NumUpY);
 
                     isStarted = true;
                     signal.onStart();
@@ -210,24 +227,24 @@ public class MineView extends View {
                     signal.onStart();
                 }
 
-                if (checkPoint(NumX, NumY)) {
+                if (checkPoint(NumUpX, NumUpY)) {
 
-                    if (mines[NumX][NumY].value != -1 && mines[NumX][NumY].isOpen()
-                            && !mines[NumX][NumY].isFlag()) {//在已经出现的数字或者空白上点击
+                    if (mines[NumUpX][NumUpY].value != -1 && mines[NumUpX][NumUpY].isOpen()
+                            && !mines[NumUpX][NumUpY].isFlag()) {//在已经出现的数字或者空白上点击
                         int sum = 0;
                         for (int k = 0; k < adjoin.length; k++) {
-                            int pointX = NumX + adjoin[k][0];
-                            int pointY = NumY + adjoin[k][1];
+                            int pointX = NumUpX + adjoin[k][0];
+                            int pointY = NumUpY + adjoin[k][1];
                             if (checkPoint(pointX, pointY)) {
                                 if (mines[pointX][pointY].isFlag()) {
                                     sum++;
                                 }
                             }
                         }
-                        if (sum == mines[NumX][NumY].value) {
+                        if (sum == mines[NumUpX][NumUpY].value) {
                             for (int k = 0; k < adjoin.length; k++) {
-                                int pointX = NumX + adjoin[k][0];
-                                int pointY = NumY + adjoin[k][1];
+                                int pointX = NumUpX + adjoin[k][0];
+                                int pointY = NumUpY + adjoin[k][1];
                                 if (checkPoint(pointX, pointY)) {
                                     if (mines[pointX][pointY].value == -1 && !mines[pointX][pointY].flag) {
                                         preFinish();
@@ -242,15 +259,15 @@ public class MineView extends View {
                         }
                     }
                     if (!flagSwitch) {//扫雷模式
-                        if (mines[NumX][NumY].value != -1) {
-                            open(new Point(NumX, NumY), false);
+                        if (mines[NumUpX][NumUpY].value != -1) {
+                            open(new Point(NumUpX, NumUpY), false);
                         } else {//碰到雷 gg 了
                             preFinish();
                             showFailure();
                         }
                     } else {//插旗模式
-                        if (!mines[NumX][NumY].isOpen()) {
-                            mines[NumX][NumY].setFlag(!mines[NumX][NumY].isFlag());
+                        if (!mines[NumUpX][NumUpY].isOpen()) {
+                            mines[NumUpX][NumUpY].setFlag(!mines[NumUpX][NumUpY].isFlag());
                         }
                     }
                     invalidate();
@@ -258,6 +275,38 @@ public class MineView extends View {
                 }
                 break;
 
+            case MotionEvent.ACTION_POINTER_DOWN:
+                mode = 2;
+                startX = event.getX(0);
+                startY = event.getY(0);
+                break;
+            case MotionEvent.ACTION_MOVE:
+                if (mode == 2) {
+                    Log.i("fanghao ", "onTouchEventX: " + getScrollX());
+                    Log.i("fanghao ", "onTouchEventY: " + getScrollY());
+                    float futureX = getScrollX() + startX - event.getX(0);
+                    float futureY = getScrollY() + startY - event.getY(0);
+                    if (futureX < -10 ){
+                        futureX = -10;
+                    }
+                    if (mapWidth < getWidth()) {
+                        futureX = 0;
+                    }else if (futureX > mapWidth -getWidth() + 10){
+                        futureX = mapWidth -getWidth() + 10;
+                    }
+                    if (futureY < -10) {
+                        futureY = -10;
+                    }
+                    if (mapHeight < getHeight()) {
+                        futureY = 0;
+                    }else if (futureY > mapHeight -getHeight() + 10){
+                        futureY = mapHeight -getHeight() + 10;
+                    }
+                    scrollTo((int)futureX,(int)futureY);
+                    startX = event.getX(0);
+                    startY = event.getY(0);
+                }
+                break;
         }
         return true;
     }
